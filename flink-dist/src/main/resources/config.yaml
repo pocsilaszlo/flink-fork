@@ -84,7 +84,8 @@ taskmanager:
   # configured separately for each TaskManager.
   host: localhost
   # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
-  numberOfTaskSlots: 1
+  # DDPS: 4 slots so the example job (parallelism 4) fits on one TaskManager
+  numberOfTaskSlots: 4
   memory:
     process:
       # The total process memory size for the TaskManager.
@@ -300,3 +301,5 @@ rest:
 #       # Interval in milliseconds for refreshing the monitored directories.
 #       fs.refresh-interval: 10000
 
+# DDPS: refresh the REST metrics every 500 ms instead of 10 s
+metrics.fetcher.update-interval: 500
