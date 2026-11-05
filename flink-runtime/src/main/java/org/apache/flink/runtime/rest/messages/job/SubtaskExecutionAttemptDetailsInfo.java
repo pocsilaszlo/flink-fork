@@ -72,6 +72,9 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
 
     public static final String FIELD_NAME_OTHER_CONCURRENT_ATTEMPTS = "other-concurrent-attempts";
 
+    /** DDPS: per-channel output of this subtask, keyed by data set id. */
+    public static final String FIELD_NAME_DDPS_CHANNELS = "channels";
+
     @JsonProperty(FIELD_NAME_SUBTASK_INDEX)
     private final int subtaskIndex;
 
@@ -111,6 +114,38 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
     @Nullable
     private final List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts;
 
+    @JsonProperty(FIELD_NAME_DDPS_CHANNELS)
+    @JsonInclude(Include.NON_NULL)
+    @Nullable
+    private final Map<String, DdpsChannelInfo> channels;
+
+    public SubtaskExecutionAttemptDetailsInfo(
+            int subtaskIndex,
+            ExecutionState status,
+            int attempt,
+            String endpoint,
+            long startTime,
+            long endTime,
+            long duration,
+            IOMetricsInfo ioMetricsInfo,
+            String taskmanagerId,
+            Map<ExecutionState, Long> statusDuration,
+            @Nullable List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts) {
+        this(
+                subtaskIndex,
+                status,
+                attempt,
+                endpoint,
+                startTime,
+                endTime,
+                duration,
+                ioMetricsInfo,
+                taskmanagerId,
+                statusDuration,
+                otherConcurrentAttempts,
+                null);
+    }
+
     @JsonCreator
     // blocked is Nullable since Jackson will assign null if the field is absent while parsing
     public SubtaskExecutionAttemptDetailsInfo(
@@ -125,7 +160,9 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
             @JsonProperty(FIELD_NAME_TASKMANAGER_ID) String taskmanagerId,
             @JsonProperty(FIELD_NAME_STATUS_DURATION) Map<ExecutionState, Long> statusDuration,
             @JsonProperty(FIELD_NAME_OTHER_CONCURRENT_ATTEMPTS) @Nullable
-                    List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts) {
+                    List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts,
+            @JsonProperty(FIELD_NAME_DDPS_CHANNELS) @Nullable
+                    Map<String, DdpsChannelInfo> channels) {
 
         this.subtaskIndex = subtaskIndex;
         this.status = Preconditions.checkNotNull(status);
@@ -139,6 +176,7 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
         this.taskmanagerId = Preconditions.checkNotNull(taskmanagerId);
         this.statusDuration = Preconditions.checkNotNull(statusDuration);
         this.otherConcurrentAttempts = otherConcurrentAttempts;
+        this.channels = channels;
     }
 
     public int getSubtaskIndex() {
@@ -187,6 +225,11 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
 
     public String getTaskmanagerId() {
         return taskmanagerId;
+    }
+
+    @Nullable
+    public Map<String, DdpsChannelInfo> getChannels() {
+        return channels;
     }
 
     public List<SubtaskExecutionAttemptDetailsInfo> getOtherConcurrentAttempts() {
@@ -242,7 +285,27 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
                 ioMetricsInfo,
                 taskmanagerId,
                 getExecutionStateDuration(execution),
-                otherConcurrentAttempts);
+                otherConcurrentAttempts,
+                ddpsChannels(execution, jobMetrics, jobID, jobVertexID));
+    }
+
+    /** DDPS: the per-channel metrics of a running attempt, read from the metric store. */
+    @Nullable
+    private static Map<String, DdpsChannelInfo> ddpsChannels(
+            AccessExecution execution,
+            @Nullable MetricStore.JobMetricStoreSnapshot jobMetrics,
+            JobID jobID,
+            JobVertexID jobVertexID) {
+        if (jobMetrics == null || execution.getState().isTerminal()) {
+            return null;
+        }
+        MetricStore.ComponentMetricStore metrics =
+                jobMetrics.getSubtaskAttemptMetricStore(
+                        jobID.toString(),
+                        jobVertexID.toString(),
+                        execution.getParallelSubtaskIndex(),
+                        execution.getAttemptNumber());
+        return metrics == null ? null : DdpsChannelInfo.fromMetrics(metrics.metrics);
     }
 
     @Override
@@ -267,7 +330,8 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
                 && Objects.equals(ioMetricsInfo, that.ioMetricsInfo)
                 && Objects.equals(taskmanagerId, that.taskmanagerId)
                 && Objects.equals(statusDuration, that.statusDuration)
-                && Objects.equals(otherConcurrentAttempts, that.otherConcurrentAttempts);
+                && Objects.equals(otherConcurrentAttempts, that.otherConcurrentAttempts)
+                && Objects.equals(channels, that.channels);
     }
 
     @Override
@@ -284,6 +348,7 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
                 ioMetricsInfo,
                 taskmanagerId,
                 statusDuration,
-                otherConcurrentAttempts);
+                otherConcurrentAttempts,
+                channels);
     }
 }

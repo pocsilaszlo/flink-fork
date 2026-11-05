@@ -644,6 +644,9 @@
                         },
                         "caching" : {
                           "type" : "string"
+                        },
+                        "dataset" : {
+                          "type" : "string"
                         }
                       }
                     }
@@ -768,6 +771,9 @@
                           "type" : "string"
                         },
                         "caching" : {
+                          "type" : "string"
+                        },
+                        "dataset" : {
                           "type" : "string"
                         }
                       }
@@ -1506,6 +1512,9 @@
                           "type" : "string"
                         },
                         "caching" : {
+                          "type" : "string"
+                        },
+                        "dataset" : {
                           "type" : "string"
                         }
                       }
@@ -2823,6 +2832,9 @@
                         },
                         "caching" : {
                           "type" : "string"
+                        },
+                        "dataset" : {
+                          "type" : "string"
                         }
                       }
                     }
@@ -3961,6 +3973,42 @@
                   "$ref" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:SubtaskExecutionAttemptDetailsInfo"
                 }
               },
+              "channels" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "object",
+                  "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
+                  "properties" : {
+                    "consumerParallelism" : {
+                      "type" : "integer"
+                    },
+                    "targets" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "integer"
+                      }
+                    },
+                    "records" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "integer"
+                      }
+                    },
+                    "bytes" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "integer"
+                      }
+                    },
+                    "queuedBuffers" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "integer"
+                      }
+                    }
+                  }
+                }
+              },
               "start_time" : {
                 "type" : "integer"
               }
@@ -4421,6 +4469,42 @@
             "$ref" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:SubtaskExecutionAttemptDetailsInfo"
           }
         },
+        "channels" : {
+          "type" : "object",
+          "additionalProperties" : {
+            "type" : "object",
+            "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
+            "properties" : {
+              "consumerParallelism" : {
+                "type" : "integer"
+              },
+              "targets" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "records" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "bytes" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "queuedBuffers" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              }
+            }
+          }
+        },
         "start_time" : {
           "type" : "integer"
         }
@@ -4528,6 +4612,42 @@
           "items" : {
             "type" : "object",
             "$ref" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:SubtaskExecutionAttemptDetailsInfo"
+          }
+        },
+        "channels" : {
+          "type" : "object",
+          "additionalProperties" : {
+            "type" : "object",
+            "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
+            "properties" : {
+              "consumerParallelism" : {
+                "type" : "integer"
+              },
+              "targets" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "records" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "bytes" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              },
+              "queuedBuffers" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "integer"
+                }
+              }
+            }
           }
         },
         "start_time" : {
