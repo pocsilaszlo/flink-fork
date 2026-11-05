@@ -67,6 +67,14 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
 
     protected final boolean flushAlways;
 
+    /**
+     * DDPS: number of user records emitted to each subpartition (channel). Only the {@link
+     * #emit(IOReadableWritable)} paths count, so watermarks and other stream elements are excluded.
+     * Written by the task thread and read by the metric reporters without synchronization, like
+     * Flink's own counters.
+     */
+    protected final long[] ddpsRecordsPerSubpartition;
+
     /** The thread that periodically flushes the output, to give an upper latency bound. */
     @Nullable private final OutputFlusher outputFlusher;
 
@@ -85,6 +93,7 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         this.numberOfSubpartitions = writer.getNumberOfSubpartitions();
 
         this.serializer = new DataOutputSerializer(128);
+        this.ddpsRecordsPerSubpartition = new long[numberOfSubpartitions];
 
         checkArgument(timeout >= ExecutionOptions.DISABLED_NETWORK_BUFFER_TIMEOUT);
         this.flushAlways = (timeout == ExecutionOptions.FLUSH_AFTER_EVERY_RECORD);
@@ -164,6 +173,11 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
     /** Sets the metric group for this RecordWriter. */
     public void setMetricGroup(TaskIOMetricGroup metrics) {
         targetPartition.setMetricGroup(metrics);
+    }
+
+    /** DDPS: number of user records emitted to the given subpartition so far. */
+    public long getDdpsRecordsEmitted(int targetSubpartition) {
+        return ddpsRecordsPerSubpartition[targetSubpartition];
     }
 
     public int getNumberOfSubpartitions() {

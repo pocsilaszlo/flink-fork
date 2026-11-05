@@ -129,6 +129,14 @@ public abstract class BufferWritingResultPartition extends ResultPartition {
         return totalWrittenBytes - totalNumberOfBytes;
     }
 
+    /**
+     * DDPS: serialized bytes written to the given subpartition so far (records and stream elements
+     * such as watermarks).
+     */
+    public long getDdpsWrittenBytes(int targetSubpartition) {
+        return writtenBytesPerSubpartition[targetSubpartition];
+    }
+
     @Override
     public long getBytesInQueueUnsafe(int targetSubpartition) {
         return writtenBytesPerSubpartition[targetSubpartition]

@@ -80,6 +80,7 @@ public final class AdaptiveLoadBasedRecordWriter<T extends IOReadableWritable>
         checkErroneous();
 
         currentChannel = getIdlestChannelIndex();
+        ddpsRecordsPerSubpartition[currentChannel]++;
 
         ByteBuffer byteBuffer = serializeRecord(serializer, record);
         targetPartition.emitRecord(byteBuffer, currentChannel);

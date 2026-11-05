@@ -38,6 +38,9 @@ public final class BroadcastRecordWriter<T extends IOReadableWritable> extends R
 
     @Override
     public void emit(T record) throws IOException {
+        for (int i = 0; i < numberOfSubpartitions; i++) {
+            ddpsRecordsPerSubpartition[i]++;
+        }
         broadcastEmit(record);
     }
 

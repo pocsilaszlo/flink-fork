@@ -92,6 +92,7 @@ import org.apache.flink.streaming.api.operators.StreamOperator;
 import org.apache.flink.streaming.api.operators.StreamTaskStateInitializer;
 import org.apache.flink.streaming.api.operators.StreamTaskStateInitializerImpl;
 import org.apache.flink.streaming.runtime.io.DataInputStatus;
+import org.apache.flink.streaming.runtime.io.DdpsChannelMetrics;
 import org.apache.flink.streaming.runtime.io.RecordWriterOutput;
 import org.apache.flink.streaming.runtime.io.StreamInputProcessor;
 import org.apache.flink.streaming.runtime.io.checkpointing.BarrierAlignmentUtil;
@@ -1879,6 +1880,15 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                         .setMaxTraverseSize(maxTraverseSize)
                         .build(bufferWriter);
         output.setMetricGroup(environment.getMetricGroup().getIOMetricGroup());
+        // DDPS: per-channel records, bytes and queues of this output
+        DdpsChannelMetrics.register(
+                environment.getMetricGroup().getIOMetricGroup(),
+                streamOutput.getDataSetId(),
+                output,
+                bufferWriter,
+                environment.getTaskInfo().getIndexOfThisSubtask(),
+                environment.getTaskInfo().getNumberOfParallelSubtasks(),
+                streamOutput.getConsumerParallelism());
         return output;
     }
 

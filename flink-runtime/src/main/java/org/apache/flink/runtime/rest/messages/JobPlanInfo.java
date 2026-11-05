@@ -415,6 +415,14 @@ public class JobPlanInfo implements ResponseBody {
                 @JsonProperty(FIELD_NAME_EXCHANGE)
                 private final String exchange;
 
+                /** DDPS: id of the intermediate data set this input reads. */
+                private static final String FIELD_NAME_DATASET = "dataset";
+
+                @Nullable
+                @JsonInclude(Include.NON_NULL)
+                @JsonProperty(FIELD_NAME_DATASET)
+                private final String dataset;
+
                 @Override
                 public boolean equals(Object o) {
                     if (this == o) {
@@ -429,12 +437,24 @@ public class JobPlanInfo implements ResponseBody {
                             && Objects.equals(shipStrategy, that.shipStrategy)
                             && Objects.equals(localStrategy, that.localStrategy)
                             && Objects.equals(caching, that.caching)
-                            && Objects.equals(exchange, that.exchange);
+                            && Objects.equals(exchange, that.exchange)
+                            && Objects.equals(dataset, that.dataset);
                 }
 
                 @Override
                 public int hashCode() {
-                    return Objects.hash(id, num, shipStrategy, localStrategy, caching, exchange);
+                    return Objects.hash(
+                            id, num, shipStrategy, localStrategy, caching, exchange, dataset);
+                }
+
+                public Input(
+                        String id,
+                        long num,
+                        String exchange,
+                        @Nullable String shipStrategy,
+                        @Nullable String localStrategy,
+                        @Nullable String caching) {
+                    this(id, num, exchange, shipStrategy, localStrategy, caching, null);
                 }
 
                 @JsonCreator
@@ -444,7 +464,9 @@ public class JobPlanInfo implements ResponseBody {
                         @JsonProperty(FIELD_NAME_EXCHANGE) String exchange,
                         @Nullable @JsonProperty(FIELD_NAME_SHIP_STRATEGY) String shipStrategy,
                         @Nullable @JsonProperty(FIELD_NAME_LOCAL_STRATEGY) String localStrategy,
-                        @Nullable @JsonProperty(FIELD_NAME_CACHING) String caching) {
+                        @Nullable @JsonProperty(FIELD_NAME_CACHING) String caching,
+                        @Nullable @JsonProperty(FIELD_NAME_DATASET) String dataset) {
+                    this.dataset = dataset;
                     this.id = Preconditions.checkNotNull(id);
                     this.num = Preconditions.checkNotNull(num);
                     this.exchange = Preconditions.checkNotNull(exchange);
@@ -461,6 +483,12 @@ public class JobPlanInfo implements ResponseBody {
                 @JsonIgnore
                 public String getId() {
                     return id;
+                }
+
+                @JsonIgnore
+                @Nullable
+                public String getDataset() {
+                    return dataset;
                 }
 
                 @JsonIgnore

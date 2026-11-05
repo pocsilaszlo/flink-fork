@@ -52,7 +52,9 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
 
     @Override
     public void emit(T record) throws IOException {
-        emit(record, channelSelector.selectChannel(record));
+        int targetSubpartition = channelSelector.selectChannel(record);
+        ddpsRecordsPerSubpartition[targetSubpartition]++;
+        emit(record, targetSubpartition);
     }
 
     @Override

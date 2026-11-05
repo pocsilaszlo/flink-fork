@@ -130,7 +130,9 @@ public class JsonPlanGenerator {
                                         exchange,
                                         shipStrategy,
                                         preProcessingOperation,
-                                        operatorLevelCaching));
+                                        operatorLevelCaching,
+                                        // DDPS: lets readers join ddps.<dataSetId>.* metrics
+                                        edge.getSourceId().toString()));
                     }
                 }
                 nodes.add(
