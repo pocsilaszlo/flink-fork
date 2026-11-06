@@ -29,10 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DdpsChannelInfoTest {
 
     @Test
-    void testGroupsMetricsByDataSet() {
+    void testOneTargetPerConsumerSubtask() {
         Map<String, String> metrics = new HashMap<>();
-        metrics.put("ddps.aa.consumerParallelism", "2");
-        metrics.put("ddps.aa.targets", "0,1");
+        metrics.put("ddps.aa.consumerParallelism", "4");
+        metrics.put("ddps.aa.targets", "2,3");
         metrics.put("ddps.aa.records", "10,20");
         metrics.put("ddps.aa.bytes", "100,200");
         metrics.put("ddps.aa.queuedBuffers", "0,3");
@@ -40,34 +40,49 @@ class DdpsChannelInfoTest {
         metrics.put("ddps.bb.records", "5");
         metrics.put("numRecordsOut", "35");
 
-        Map<String, DdpsChannelInfo> channels = DdpsChannelInfo.fromMetrics(metrics);
+        Map<String, String> consumers = new HashMap<>();
+        consumers.put("aa", "vertexA");
+
+        Map<String, DdpsChannelInfo> channels = DdpsChannelInfo.fromMetrics(metrics, consumers);
 
         assertThat(channels).containsOnlyKeys("aa", "bb");
         DdpsChannelInfo aa = channels.get("aa");
-        assertThat(aa.getConsumerParallelism()).isEqualTo(2);
-        assertThat(aa.getTargets()).containsExactly(0, 1);
-        assertThat(aa.getRecords()).containsExactly(10L, 20L);
-        assertThat(aa.getBytes()).containsExactly(100L, 200L);
-        assertThat(aa.getQueuedBuffers()).containsExactly(0, 3);
+        assertThat(aa.getConsumerVertexId()).isEqualTo("vertexA");
+        assertThat(aa.getConsumerParallelism()).isEqualTo(4);
+        assertThat(aa.getTargets()).containsOnlyKeys("2", "3");
+        assertThat(aa.getTargets().get("2")).isEqualTo(new DdpsChannelInfo.Target(10L, 100L, 0));
+        assertThat(aa.getTargets().get("3")).isEqualTo(new DdpsChannelInfo.Target(20L, 200L, 3));
+
         DdpsChannelInfo bb = channels.get("bb");
-        assertThat(bb.getRecords()).containsExactly(5L);
-        assertThat(bb.getBytes()).isNull();
+        assertThat(bb.getConsumerVertexId()).isNull();
+        assertThat(bb.getTargets().get("1")).isEqualTo(new DdpsChannelInfo.Target(5L, null, null));
     }
 
     @Test
     void testNoDdpsMetrics() {
         Map<String, String> metrics = new HashMap<>();
         metrics.put("numRecordsOut", "35");
-        assertThat(DdpsChannelInfo.fromMetrics(metrics)).isNull();
+        assertThat(DdpsChannelInfo.fromMetrics(metrics, null)).isNull();
     }
 
     @Test
     void testMalformedValueIsDropped() {
         Map<String, String> metrics = new HashMap<>();
         metrics.put("ddps.aa.records", "10,x");
+        metrics.put("ddps.aa.bytes", "100,200");
         metrics.put("ddps.aa.targets", "0,1");
-        DdpsChannelInfo aa = DdpsChannelInfo.fromMetrics(metrics).get("aa");
-        assertThat(aa.getRecords()).isNull();
-        assertThat(aa.getTargets()).containsExactly(0, 1);
+        DdpsChannelInfo aa = DdpsChannelInfo.fromMetrics(metrics, null).get("aa");
+        assertThat(aa.getTargets().get("0"))
+                .isEqualTo(new DdpsChannelInfo.Target(null, 100L, null));
+        assertThat(aa.getTargets().get("1"))
+                .isEqualTo(new DdpsChannelInfo.Target(null, 200L, null));
+    }
+
+    @Test
+    void testWithoutTargetsTheChannelIndexIsTheKey() {
+        Map<String, String> metrics = new HashMap<>();
+        metrics.put("ddps.aa.records", "7,8");
+        DdpsChannelInfo aa = DdpsChannelInfo.fromMetrics(metrics, null).get("aa");
+        assertThat(aa.getTargets()).containsOnlyKeys("0", "1");
     }
 }

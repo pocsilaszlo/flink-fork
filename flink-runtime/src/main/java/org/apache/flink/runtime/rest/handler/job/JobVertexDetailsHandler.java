@@ -31,6 +31,7 @@ import org.apache.flink.runtime.rest.handler.legacy.metrics.MetricFetcher;
 import org.apache.flink.runtime.rest.handler.legacy.metrics.MetricStore;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.JobIDPathParameter;
+import org.apache.flink.runtime.rest.messages.JobPlanInfo;
 import org.apache.flink.runtime.rest.messages.JobVertexDetailsInfo;
 import org.apache.flink.runtime.rest.messages.JobVertexIdPathParameter;
 import org.apache.flink.runtime.rest.messages.JobVertexMessageParameters;
@@ -48,6 +49,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -92,7 +94,10 @@ public class JobVertexDetailsHandler
 
         metricFetcher.update();
         return createJobVertexDetailsInfo(
-                jobVertex, jobID, metricFetcher.getMetricStore().getJobs());
+                jobVertex,
+                jobID,
+                metricFetcher.getMetricStore().getJobs(),
+                ddpsConsumersByDataSet(executionGraph.getPlan()));
     }
 
     @Override
@@ -101,7 +106,7 @@ public class JobVertexDetailsHandler
         Collection<? extends AccessExecutionJobVertex> vertices = graph.getAllVertices().values();
         List<ArchivedJson> archive = new ArrayList<>(vertices.size());
         for (AccessExecutionJobVertex task : vertices) {
-            ResponseBody json = createJobVertexDetailsInfo(task, graph.getJobID(), null);
+            ResponseBody json = createJobVertexDetailsInfo(task, graph.getJobID(), null, null);
             String path =
                     getMessageHeaders()
                             .getTargetRestEndpointURL()
@@ -117,7 +122,8 @@ public class JobVertexDetailsHandler
     private static JobVertexDetailsInfo createJobVertexDetailsInfo(
             AccessExecutionJobVertex jobVertex,
             JobID jobID,
-            @Nullable MetricStore.JobMetricStoreSnapshot jobMetrics) {
+            @Nullable MetricStore.JobMetricStoreSnapshot jobMetrics,
+            @Nullable Map<String, String> consumerByDataSet) {
         List<SubtaskExecutionAttemptDetailsInfo> subtasks = new ArrayList<>();
         final long now = System.currentTimeMillis();
         for (AccessExecutionVertex vertex : jobVertex.getTaskVertices()) {
@@ -133,14 +139,24 @@ public class JobVertexDetailsHandler
                     if (attempt.getAttemptNumber() != execution.getAttemptNumber()) {
                         otherConcurrentAttempts.add(
                                 SubtaskExecutionAttemptDetailsInfo.create(
-                                        attempt, jobMetrics, jobID, jobVertexID, null));
+                                        attempt,
+                                        jobMetrics,
+                                        jobID,
+                                        jobVertexID,
+                                        null,
+                                        consumerByDataSet));
                     }
                 }
             }
 
             subtasks.add(
                     SubtaskExecutionAttemptDetailsInfo.create(
-                            execution, jobMetrics, jobID, jobVertexID, otherConcurrentAttempts));
+                            execution,
+                            jobMetrics,
+                            jobID,
+                            jobVertexID,
+                            otherConcurrentAttempts,
+                            consumerByDataSet));
         }
 
         return new JobVertexDetailsInfo(
@@ -150,5 +166,25 @@ public class JobVertexDetailsHandler
                 jobVertex.getMaxParallelism(),
                 now,
                 subtasks);
+    }
+
+    /** DDPS: data set id to the id of the vertex that reads it, from the job plan. */
+    @Nullable
+    private static Map<String, String> ddpsConsumersByDataSet(@Nullable JobPlanInfo.Plan plan) {
+        if (plan == null || plan.getNodes() == null) {
+            return null;
+        }
+        Map<String, String> consumers = new HashMap<>();
+        for (JobPlanInfo.Plan.Node node : plan.getNodes()) {
+            if (node.getInputs() == null) {
+                continue;
+            }
+            for (JobPlanInfo.Plan.Node.Input input : node.getInputs()) {
+                if (input.getDataset() != null) {
+                    consumers.put(input.getDataset(), node.getId());
+                }
+            }
+        }
+        return consumers;
     }
 }

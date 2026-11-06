@@ -242,6 +242,22 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
             JobID jobID,
             JobVertexID jobVertexID,
             @Nullable List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts) {
+        return create(execution, jobMetrics, jobID, jobVertexID, otherConcurrentAttempts, null);
+    }
+
+    /**
+     * DDPS: like {@link #create(AccessExecution, MetricStore.JobMetricStoreSnapshot, JobID,
+     * JobVertexID, List)}, and names the consuming vertex of every data set in {@code channels}.
+     *
+     * @param consumerByDataSet data set id to consuming vertex id, or {@code null} if unknown
+     */
+    public static SubtaskExecutionAttemptDetailsInfo create(
+            AccessExecution execution,
+            @Nullable MetricStore.JobMetricStoreSnapshot jobMetrics,
+            JobID jobID,
+            JobVertexID jobVertexID,
+            @Nullable List<SubtaskExecutionAttemptDetailsInfo> otherConcurrentAttempts,
+            @Nullable Map<String, String> consumerByDataSet) {
         final ExecutionState status = execution.getState();
         final long now = System.currentTimeMillis();
 
@@ -286,7 +302,7 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
                 taskmanagerId,
                 getExecutionStateDuration(execution),
                 otherConcurrentAttempts,
-                ddpsChannels(execution, jobMetrics, jobID, jobVertexID));
+                ddpsChannels(execution, jobMetrics, jobID, jobVertexID, consumerByDataSet));
     }
 
     /** DDPS: the per-channel metrics of a running attempt, read from the metric store. */
@@ -295,7 +311,8 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
             AccessExecution execution,
             @Nullable MetricStore.JobMetricStoreSnapshot jobMetrics,
             JobID jobID,
-            JobVertexID jobVertexID) {
+            JobVertexID jobVertexID,
+            @Nullable Map<String, String> consumerByDataSet) {
         if (jobMetrics == null || execution.getState().isTerminal()) {
             return null;
         }
@@ -305,7 +322,9 @@ public class SubtaskExecutionAttemptDetailsInfo implements ResponseBody {
                         jobVertexID.toString(),
                         execution.getParallelSubtaskIndex(),
                         execution.getAttemptNumber());
-        return metrics == null ? null : DdpsChannelInfo.fromMetrics(metrics.metrics);
+        return metrics == null
+                ? null
+                : DdpsChannelInfo.fromMetrics(metrics.metrics, consumerByDataSet);
     }
 
     @Override

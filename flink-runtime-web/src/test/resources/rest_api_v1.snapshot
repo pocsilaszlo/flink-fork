@@ -3979,31 +3979,28 @@
                   "type" : "object",
                   "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
                   "properties" : {
+                    "consumerVertexId" : {
+                      "type" : "string"
+                    },
                     "consumerParallelism" : {
                       "type" : "integer"
                     },
                     "targets" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "integer"
-                      }
-                    },
-                    "records" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "integer"
-                      }
-                    },
-                    "bytes" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "integer"
-                      }
-                    },
-                    "queuedBuffers" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "integer"
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "object",
+                        "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo:Target",
+                        "properties" : {
+                          "records" : {
+                            "type" : "integer"
+                          },
+                          "bytes" : {
+                            "type" : "integer"
+                          },
+                          "queuedBuffers" : {
+                            "type" : "integer"
+                          }
+                        }
                       }
                     }
                   }
@@ -4475,31 +4472,28 @@
             "type" : "object",
             "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
             "properties" : {
+              "consumerVertexId" : {
+                "type" : "string"
+              },
               "consumerParallelism" : {
                 "type" : "integer"
               },
               "targets" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "records" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "bytes" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "queuedBuffers" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "object",
+                  "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo:Target",
+                  "properties" : {
+                    "records" : {
+                      "type" : "integer"
+                    },
+                    "bytes" : {
+                      "type" : "integer"
+                    },
+                    "queuedBuffers" : {
+                      "type" : "integer"
+                    }
+                  }
                 }
               }
             }
@@ -4620,31 +4614,28 @@
             "type" : "object",
             "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo",
             "properties" : {
+              "consumerVertexId" : {
+                "type" : "string"
+              },
               "consumerParallelism" : {
                 "type" : "integer"
               },
               "targets" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "records" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "bytes" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
-                }
-              },
-              "queuedBuffers" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer"
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "object",
+                  "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:job:DdpsChannelInfo:Target",
+                  "properties" : {
+                    "records" : {
+                      "type" : "integer"
+                    },
+                    "bytes" : {
+                      "type" : "integer"
+                    },
+                    "queuedBuffers" : {
+                      "type" : "integer"
+                    }
+                  }
                 }
               }
             }

@@ -35,19 +35,27 @@ the standard metrics endpoint, e.g.
 
 * `GET /jobs/{jid}/plan`: every input has a `dataset` field, the id used in the metric names above.
 * `GET /jobs/{jid}/vertices/{vid}` (and the subtask detail endpoints): every running subtask has a
-  `channels` object, keyed by data set id:
+  `channels` object, keyed by data set id. Inside, `targets` has one entry per consumer subtask,
+  keyed by its subtask index, so every entry is one edge of the job graph (the same shape as the
+  per-source objects of the Spark fork's `sourceMetrics`):
 
 ```json
 "channels": {
-  "700e0079c8225e5f4cd5c9ebb8733a79": {
+  "<data set id>": {
+    "consumerVertexId": "<id of the Window vertex>",
     "consumerParallelism": 4,
-    "targets": [0, 1, 2, 3],
-    "records": [20644, 12575, 44831, 27000],
-    "bytes": [578036, 352104, 1255272, 756004],
-    "queuedBuffers": [1, 1, 1, 1]
+    "targets": {
+      "0": { "records": 20644, "bytes": 578036,  "queuedBuffers": 1 },
+      "1": { "records": 12575, "bytes": 352104,  "queuedBuffers": 1 },
+      "2": { "records": 44831, "bytes": 1255272, "queuedBuffers": 1 },
+      "3": { "records": 27000, "bytes": 756004,  "queuedBuffers": 1 }
+    }
   }
 }
 ```
+
+`consumerVertexId` is resolved from the plan on the vertex endpoint; the subtask endpoints omit
+it.
 
 One request per vertex therefore returns the nodes and all measured outgoing edges. The values
 refresh every `metrics.fetcher.update-interval`; this fork sets it to 500 ms in the default
@@ -62,7 +70,7 @@ refresh every `metrics.fetcher.update-interval`; this fork sets it to 500 ms in 
 | `streaming/runtime/io/DdpsChannelMetrics` (new) | registers the metrics, maps channels to consumer subtasks |
 | `streaming/runtime/tasks/StreamTask` | calls the registration for every output |
 | `JobPlanInfo`, `JsonPlanGenerator` | `dataset` field in the plan |
-| `rest/messages/job/DdpsChannelInfo` (new), `SubtaskExecutionAttemptDetailsInfo` | `channels` field in the vertex and subtask responses |
+| `rest/messages/job/DdpsChannelInfo` (new), `SubtaskExecutionAttemptDetailsInfo`, `JobVertexDetailsHandler` | `channels` field in the vertex and subtask responses, consumer vertex from the plan |
 | `flink-dist/src/main/resources/config.yaml` | 4 slots, 500 ms metric fetcher interval |
 | `DdpsChannelMetricsTest`, `DdpsChannelInfoTest` (new) | unit tests |
 
