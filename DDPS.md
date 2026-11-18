@@ -130,11 +130,14 @@ are used.
 
 ### Without building the fork
 
-The fork's changes are all in `lib/flink-dist-2.3.0.jar`. The jar is attached to the
-[GitHub releases](https://github.com/pocsilaszlo/flink-fork/releases) of this repository; replacing
-the jar of a stock Flink 2.3.0 distribution (or of the official `flink:2.3.0` Docker image) with it
-gives the forked Flink. Set `metrics.fetcher.update-interval: 500` in its `config.yaml` for live
-values.
+The fork's changes are all in `lib/flink-dist-2.3.0.jar`. The
+[GitHub releases](https://github.com/pocsilaszlo/flink-fork/releases) of this repository attach
+`flink-2.3.0-ddps-lib.tgz`, which holds the whole `lib/` folder and `bin/bash-java-utils.jar` of the
+fork's build. Extracting it over a stock Flink 2.3.0 distribution (or the official `flink:2.3.0`
+Docker image, after removing its `lib/`) gives the forked Flink. Replace these files together:
+the fork is built with JDK 21, and mixing its `flink-dist` jar with the stock
+`bash-java-utils.jar` fails at startup with `NoClassDefFoundError: BashJavaUtils$1`. Set
+`metrics.fetcher.update-interval: 500` in `config.yaml` for live values.
 
 ### In the DDPS repository
 
