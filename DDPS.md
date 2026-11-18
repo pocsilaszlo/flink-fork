@@ -36,13 +36,13 @@ the standard metrics endpoint, e.g.
 * `GET /jobs/{jid}/plan`: every input has a `dataset` field, the id used in the metric names above.
 * `GET /jobs/{jid}/vertices/{vid}` (and the subtask detail endpoints): every running subtask has a
   `channels` object, keyed by data set id. Inside, `targets` has one entry per consumer subtask,
-  keyed by its subtask index, so every entry is one edge of the job graph (the same shape as the
-  per-source objects of the Spark fork's `sourceMetrics`):
+  keyed by its subtask index, so every entry is one edge of the job graph (the counterpart of the
+  per-source entries of the Spark fork's `sourceMetrics`):
 
 ```json
 "channels": {
   "<data set id>": {
-    "consumerVertexId": "<id of the Window vertex>",
+    "consumerVertexId": "<id of the consuming vertex>",
     "consumerParallelism": 4,
     "targets": {
       "0": { "records": 20644, "bytes": 578036,  "queuedBuffers": 1 },
@@ -72,6 +72,7 @@ refresh every `metrics.fetcher.update-interval`; this fork sets it to 500 ms in 
 | `JobPlanInfo`, `JsonPlanGenerator` | `dataset` field in the plan |
 | `rest/messages/job/DdpsChannelInfo` (new), `SubtaskExecutionAttemptDetailsInfo`, `JobVertexDetailsHandler` | `channels` field in the vertex and subtask responses, consumer vertex from the plan |
 | `flink-dist/src/main/resources/config.yaml` | 4 slots, 500 ms metric fetcher interval |
+| `flink-runtime-web/src/test/resources/rest_api_v1.snapshot` | REST API snapshot regenerated for the new fields |
 | `DdpsChannelMetricsTest`, `DdpsChannelInfoTest` (new) | unit tests |
 
 Most additions are marked with a `DDPS` comment; the record counters live in the `ddpsRecordsPerSubpartition` field of `RecordWriter`.
@@ -115,8 +116,31 @@ delete `~/.m2/repository/org/apache/flink/*/2.3.0`.
 ./build-target/bin/stop-cluster.sh
 ```
 
-Build job jars with Flink in `provided` scope so the cluster's (forked) classes are used. In the
-DDPS repository, `flink/check_channels.sh` prints the measured channels of a running job.
+Any job works without changes. For example, the bundled `WordCount` on a directory of text files
+(one file per source subtask, since a text file is not split between subtasks):
+
+```bash
+./build-target/bin/flink run -d -p 4 build-target/examples/streaming/WordCount.jar \
+  --input <input dir> --output <output dir> --discovery-interval 10s
+```
+
+`--discovery-interval` keeps the job running after the files are read, so its `channels` stay
+available. Build your own job jars with Flink in `provided` scope so the cluster's (forked) classes
+are used.
+
+### Without building the fork
+
+The fork's changes are all in `lib/flink-dist-2.3.0.jar`. The jar is attached to the
+[GitHub releases](https://github.com/pocsilaszlo/flink-fork/releases) of this repository; replacing
+the jar of a stock Flink 2.3.0 distribution (or of the official `flink:2.3.0` Docker image) with it
+gives the forked Flink. Set `metrics.fetcher.update-interval: 500` in its `config.yaml` for live
+values.
+
+### In the DDPS repository
+
+* `docs/content/flink/`: setup guides (local and Docker) and the REST API guide with example responses.
+* `flink/check_channels.sh`: prints the measured channels of a running job and checks them against
+  `numRecordsOut`.
 
 ## Moving to a new Flink version
 
@@ -132,6 +156,8 @@ Conflicts are most likely in `StreamTask.createRecordWriter` and the REST messag
 
 * Chained operators have no channel, so there is no edge between them.
 * Finished subtasks have no `channels`: the gauges are removed with the task.
+* The first REST request after a job starts may return no values: it starts Flink's metric fetcher.
+  Repeat the request after a moment.
 * Batch execution with hybrid or blocking shuffle uses other partition classes; their bytes and
   queues are not reported (records still are).
 * The `targets` mapping follows Flink 2.3's pointwise rule
